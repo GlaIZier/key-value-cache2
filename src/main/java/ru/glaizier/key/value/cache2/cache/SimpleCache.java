@@ -23,9 +23,8 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     private final int capacity;
 
     public SimpleCache(Storage<K, V> storage, Strategy<K> strategy, int capacity) {
-        if (capacity <= 0) {
+        if (capacity <= 0)
             throw new IllegalArgumentException("Wrong capacity!");
-        }
         this.storage = storage;
         this.strategy = strategy;
         this.capacity = capacity;
