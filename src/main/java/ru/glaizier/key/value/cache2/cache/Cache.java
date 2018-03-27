@@ -6,6 +6,7 @@ import java.util.Optional;
 /**
  * @author GlaIZier
  */
+// Todo add logger
 public interface Cache<K, V>  {
 
     Optional<V> get(K key);
