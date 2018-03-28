@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,11 +21,11 @@ import java.util.stream.Stream;
 
 public class FileStorage<K extends Serializable, V extends Serializable> implements Storage<K, V> {
 
+    public final static String FILENAME_FORMAT = "%s-%s.ser";
+
     private final static Path TEMP_FOLDER = Paths.get(System.getProperty("java.io.tmpdir")).resolve("key-value-cache2");
 
-    private final static String FILENAME_FORMAT = "%s-%s.ser";
-
-    private final static Pattern FILENAME_PATTERN = Pattern.compile("(\\d+)-(\\S+)\\.(ser)");
+    public final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\S+)\\.(ser)$");
 
     // Hashcode of key as String representation to List<Path> on the disk because there could be collisions
     private final Map<String, List<Path>> contents = new HashMap<>();
@@ -58,7 +59,11 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
             })
             .collect(Collectors.groupingBy(path -> {
                 String fileName = path.getFileName().toString();
-                return Integer.parseInt(FILENAME_PATTERN.matcher(fileName).group(1));
+                Matcher matcher = FILENAME_PATTERN.matcher(fileName);
+                if (matcher.find())
+                    return Integer.parseInt(matcher.group(1));
+                else
+                    throw new IllegalStateException("Didn't find group in regexp!");
             }));
     }
 
