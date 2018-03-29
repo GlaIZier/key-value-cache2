@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -42,6 +43,12 @@ public class FileStorageTest {
         assertThat(contents.get(1).get(0).toString(), not(isEmptyOrNullString()));
         assertThat(contents.get(2).size(), is(1));
         assertThat(contents.get(2).get(0).toString(), not(isEmptyOrNullString()));
+    }
+
+    @Test
+    public void createContentsWhenFolderEmpty() throws IOException {
+        Map<Integer, List<Path>> contents = FileStorage.createContents(temporaryFolder.getRoot().toPath());
+        assertTrue(contents.isEmpty());
     }
 
 }

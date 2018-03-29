@@ -1,34 +1,36 @@
 package ru.glaizier.key.value.cache2.storage;
 
-import static java.util.Optional.ofNullable;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import ru.glaizier.key.value.cache2.util.function.Functions;
+import static ru.glaizier.key.value.cache2.util.function.Functions.wrap;
 
 
 public class FileStorage<K extends Serializable, V extends Serializable> implements Storage<K, V> {
 
-    public final static String FILENAME_FORMAT = "%s-%s.ser";
+    final static String FILENAME_FORMAT = "%s-%s.ser";
 
     private final static Path TEMP_FOLDER = Paths.get(System.getProperty("java.io.tmpdir")).resolve("key-value-cache2");
 
-    public final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\S+)\\.(ser)$");
+    private final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\S+)\\.(ser)$");
 
-    // Hashcode of key as String representation to List<Path> on the disk because there could be collisions
-    private final Map<String, List<Path>> contents = new HashMap<>();
+    // Hashcode of key to List<Path> on the disk because there can be collisions
+    private final Map<Integer, List<Path>> contents;
 
     private final Path folder;
 
@@ -43,7 +45,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
             if (Files.notExists(folder)) {
                 Files.createDirectories(folder);
             }
-            createContents(folder);
+            contents = createContents(folder);
         } catch (Exception e) {
             throw new StorageException(e.getMessage(), e);
         }
@@ -69,7 +71,24 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
 
     @Override
     public Optional<V> get(K key) {
-        return Optional.empty();
+        Objects.requireNonNull(key, "key");
+        Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
+        return keyPathsOpt.flatMap(keyPaths ->
+            findPathToValue(key, keyPaths).map(Map.Entry::getValue)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map.Entry<K, V> deserialize(Path path) {
+        try (FileInputStream objFileInputStream = new FileInputStream(path.toFile());
+             ObjectInputStream objObjectInputStream = new ObjectInputStream(objFileInputStream)) {
+            Map.Entry deserialized = (Map.Entry) objObjectInputStream.readObject();
+            K key = (K) deserialized.getKey();
+            V value = (V) deserialized.getValue();
+            return new AbstractMap.SimpleImmutableEntry<>(key, value);
+        } catch (Exception e) {
+            throw new StorageException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -80,12 +99,34 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
 
     @Override
     public Optional<V> remove(K key) {
-        return Optional.empty();
+        Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
+        return keyPathsOpt.flatMap(keyPaths ->
+            findPathToValue(key, keyPaths)
+                .map(pathToValue -> {
+                        wrap(Files::deleteIfExists, StorageException.class).apply(pathToValue.getKey());
+                        return pathToValue.getValue();
+                    }
+                ));
+    }
+
+    /**
+     * Searches in a list of paths specific entry using deserialization and keys' equality
+     */
+    private Optional<? extends Map.Entry<Path, V>> findPathToValue(K key, List<Path> paths) {
+        return paths.stream()
+            .map(path -> {
+                Map.Entry<K, V> deserialized = deserialize(path);
+                return new AbstractMap.SimpleImmutableEntry<>(path, deserialized);
+            })
+            .filter(pathToEntry -> key.equals(pathToEntry.getValue().getKey()))
+            .map(pathToEntry -> new AbstractMap.SimpleImmutableEntry<>(pathToEntry.getKey(),
+                pathToEntry.getValue().getValue()))
+            .findFirst();
     }
 
     @Override
     public boolean contains(K key) {
-        return contents.containsKey(key);
+        return contents.containsKey(key.hashCode());
     }
 
     @Override
