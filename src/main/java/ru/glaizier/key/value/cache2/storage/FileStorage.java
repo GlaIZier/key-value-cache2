@@ -123,7 +123,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
 
     @Override
     public boolean contains(K key) {
-        return contents.containsKey(key.hashCode());
+        return findElement(key).isPresent();
     }
 
     @Override
