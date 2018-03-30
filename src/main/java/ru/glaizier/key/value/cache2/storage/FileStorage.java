@@ -12,12 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import ru.glaizier.key.value.cache2.util.function.Functions;
 import static ru.glaizier.key.value.cache2.util.function.Functions.wrap;
 
 
@@ -33,6 +32,39 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     private final Map<Integer, List<Path>> contents;
 
     private final Path folder;
+
+    /**
+     * Fully identified element of FileStorage
+     */
+    private static final class Element<K extends Serializable, V extends Serializable> {
+        private final K key;
+        private final V value;
+        private final Path path;
+        private final int contentsListIndex;
+
+        Element(K key, V value, Path path, int contentsListIndex) {
+            this.key = key;
+            this.value = value;
+            this.path = path;
+            this.contentsListIndex = contentsListIndex;
+        }
+
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public int getContentsListIndex() {
+            return contentsListIndex;
+        }
+    }
 
     public FileStorage() {
         this(TEMP_FOLDER);
@@ -72,10 +104,54 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     @Override
     public Optional<V> get(K key) {
         Objects.requireNonNull(key, "key");
+        return findElement(key).map(Element::getValue);
+    }
+
+    @Override
+    public Optional<V> put(K key, V value) {
+        Objects.requireNonNull(key);
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<V> remove(K key) {
+        Objects.requireNonNull(key, "key");
+        return findElement(key)
+            .flatMap(this::remove)
+            .map(Element::getValue);
+    }
+
+    @Override
+    public boolean contains(K key) {
+        return contents.containsKey(key.hashCode());
+    }
+
+    @Override
+    public int getSize() {
+        return contents.values().stream()
+            .mapToInt(List::size)
+            .reduce(Integer::sum)
+            .orElse(0);
+    }
+
+    /**
+     * Searches at first for such key the list of paths and then
+     * in a list of paths - specific entry using deserialization and keys' equality
+     */
+    private Optional<? extends Element<K, V>> findElement(K key) {
         Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
+        // Use iteration through indexes as we use ArrayList for contents => list.get(index) will work fast
         return keyPathsOpt.flatMap(keyPaths ->
-            findPathToValue(key, keyPaths).map(Map.Entry::getValue)
+            IntStream.range(0, keyPaths.size())
+                .mapToObj(i -> {
+                    Path path = keyPaths.get(i);
+                    Map.Entry<K, V> deserialized = deserialize(path);
+                    return new Element<>(deserialized.getKey(), deserialized.getValue(), path, i);
+                })
+                .filter(element -> key.equals(element.key))
+                .findFirst()
         );
+
     }
 
     @SuppressWarnings("unchecked")
@@ -91,47 +167,16 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
         }
     }
 
-    @Override
-    public Optional<V> put(K key, V value) {
-        Objects.requireNonNull(key);
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<V> remove(K key) {
-        Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
-        return keyPathsOpt.flatMap(keyPaths ->
-            findPathToValue(key, keyPaths)
-                .map(pathToValue -> {
-                        wrap(Files::deleteIfExists, StorageException.class).apply(pathToValue.getKey());
-                        return pathToValue.getValue();
-                    }
-                ));
-    }
-
     /**
-     * Searches in a list of paths specific entry using deserialization and keys' equality
+     * Removes element from disk and contents and return removed element if exists
      */
-    private Optional<? extends Map.Entry<Path, V>> findPathToValue(K key, List<Path> paths) {
-        return paths.stream()
-            .map(path -> {
-                Map.Entry<K, V> deserialized = deserialize(path);
-                return new AbstractMap.SimpleImmutableEntry<>(path, deserialized);
-            })
-            .filter(pathToEntry -> key.equals(pathToEntry.getValue().getKey()))
-            .map(pathToEntry -> new AbstractMap.SimpleImmutableEntry<>(pathToEntry.getKey(),
-                pathToEntry.getValue().getValue()))
-            .findFirst();
-    }
-
-    @Override
-    public boolean contains(K key) {
-        return contents.containsKey(key.hashCode());
-    }
-
-    @Override
-    public int getSize() {
-        return contents.size();
+    private Optional<? extends Element<K, V>> remove(Element<K, V> element) {
+        wrap(Files::deleteIfExists, StorageException.class).apply(element.path);
+        return Optional.ofNullable(contents.get(element.key.hashCode()))
+            .map(keyPaths -> {
+                keyPaths.remove(element.contentsListIndex);
+                return element;
+            });
     }
 
 }
