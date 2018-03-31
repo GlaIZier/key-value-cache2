@@ -1,7 +1,7 @@
 package ru.glaizier.key.value.cache2.util.function;
 
 /**
- * @author mkhokhlushin
+ * @author GlaIZier
  */
 @FunctionalInterface
 public interface WrappedFunction<T, R, E extends Exception> {

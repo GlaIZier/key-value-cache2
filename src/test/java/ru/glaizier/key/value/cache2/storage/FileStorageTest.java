@@ -17,7 +17,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * @author mkhokhlushin
+ * @author GlaIZier
  */
 public class FileStorageTest {
 

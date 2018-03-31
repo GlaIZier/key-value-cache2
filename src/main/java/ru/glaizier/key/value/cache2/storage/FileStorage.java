@@ -7,11 +7,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.AbstractMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -85,20 +81,20 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
 
     public static Map<Integer, List<Path>> createContents(Path folder) throws IOException {
         return Files.walk(folder)
-            .filter(Files::isRegularFile)
-            .filter(path -> Objects.nonNull(path.getFileName()))
-            .filter(path -> {
-                String fileName = path.getFileName().toString();
-                return FILENAME_PATTERN.matcher(fileName).find();
-            })
-            .collect(Collectors.groupingBy(path -> {
-                String fileName = path.getFileName().toString();
-                Matcher matcher = FILENAME_PATTERN.matcher(fileName);
-                if (matcher.find())
-                    return Integer.parseInt(matcher.group(1));
-                else
-                    throw new IllegalStateException("Didn't find group in regexp!");
-            }));
+                .filter(Files::isRegularFile)
+                .filter(path -> Objects.nonNull(path.getFileName()))
+                .filter(path -> {
+                    String fileName = path.getFileName().toString();
+                    return FILENAME_PATTERN.matcher(fileName).find();
+                })
+                .collect(Collectors.groupingBy(path -> {
+                    String fileName = path.getFileName().toString();
+                    Matcher matcher = FILENAME_PATTERN.matcher(fileName);
+                    if (matcher.find())
+                        return Integer.parseInt(matcher.group(1));
+                    else
+                        throw new IllegalStateException("Didn't find group in regexp!");
+                }));
     }
 
     @Override
@@ -110,28 +106,32 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     @Override
     public Optional<V> put(K key, V value) {
         Objects.requireNonNull(key);
-        return Optional.empty();
+        Optional<V> prevValue = remove(key);
+
+        putVal(key, value);
+        return prevValue;
     }
 
     @Override
     public Optional<V> remove(K key) {
         Objects.requireNonNull(key, "key");
         return findElement(key)
-            .flatMap(this::remove)
-            .map(Element::getValue);
+                .flatMap(this::remove)
+                .map(Element::getValue);
     }
 
     @Override
     public boolean contains(K key) {
+        Objects.requireNonNull(key, "key");
         return findElement(key).isPresent();
     }
 
     @Override
     public int getSize() {
         return contents.values().stream()
-            .mapToInt(List::size)
-            .reduce(Integer::sum)
-            .orElse(0);
+                .mapToInt(List::size)
+                .reduce(Integer::sum)
+                .orElse(0);
     }
 
     /**
@@ -142,14 +142,14 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
         Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
         // Use iteration through indexes as we use ArrayList for contents => list.get(index) will work fast
         return keyPathsOpt.flatMap(keyPaths ->
-            IntStream.range(0, keyPaths.size())
-                .mapToObj(i -> {
-                    Path path = keyPaths.get(i);
-                    Map.Entry<K, V> deserialized = deserialize(path);
-                    return new Element<>(deserialized.getKey(), deserialized.getValue(), path, i);
-                })
-                .filter(element -> key.equals(element.key))
-                .findFirst()
+                IntStream.range(0, keyPaths.size())
+                        .mapToObj(i -> {
+                            Path path = keyPaths.get(i);
+                            Map.Entry<K, V> deserialized = deserialize(path);
+                            return new Element<>(deserialized.getKey(), deserialized.getValue(), path, i);
+                        })
+                        .filter(element -> key.equals(element.key))
+                        .findFirst()
         );
 
     }
@@ -171,12 +171,35 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
      * Removes element from disk and contents and return removed element if exists
      */
     private Optional<? extends Element<K, V>> remove(Element<K, V> element) {
+        // remove from disk
         wrap(Files::deleteIfExists, StorageException.class).apply(element.path);
-        return Optional.ofNullable(contents.get(element.key.hashCode()))
-            .map(keyPaths -> {
-                keyPaths.remove(element.contentsListIndex);
-                return element;
-            });
+        // remove from contents
+        Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(element.key.hashCode()));
+        // remove from key paths
+        Optional<Element<K, V>> removedElement = keyPathsOpt
+                .map(keyPaths -> {
+                    keyPaths.remove(element.contentsListIndex);
+                    return element;
+                });
+        // remove the whole key if it was the only key
+        keyPathsOpt
+                .filter(List::isEmpty)
+                .ifPresent(keyPaths -> contents.remove(element.key.hashCode()));
+        return removedElement;
+    }
+
+    private Element<K, V> putVal(K key, V value) {
+        // Todo serialize
+        Path serialized = null;
+        // update contents
+        List<Path> keyPaths = Optional.ofNullable(contents.get(key.hashCode()))
+                .orElseGet(() -> {
+                    List<Path> newKeyPaths = new ArrayList<>();
+                    contents.put(key.hashCode(), newKeyPaths);
+                    return newKeyPaths;
+                });
+        keyPaths.add(serialized);
+        return new Element<>(key, value, serialized, keyPaths.size() - 1);
     }
 
 }
