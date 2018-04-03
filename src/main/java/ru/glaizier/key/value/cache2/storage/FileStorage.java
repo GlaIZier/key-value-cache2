@@ -1,8 +1,11 @@
 package ru.glaizier.key.value.cache2.storage;
 
+import static java.lang.String.format;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,11 +21,12 @@ import static ru.glaizier.key.value.cache2.util.function.Functions.wrap;
 
 public class FileStorage<K extends Serializable, V extends Serializable> implements Storage<K, V> {
 
-    final static String FILENAME_FORMAT = "%s-%s.ser";
+    // filename format: <keyHash>-<contentsListIndex>.ser
+    final static String FILENAME_FORMAT = "%d-%d.ser";
 
     private final static Path TEMP_FOLDER = Paths.get(System.getProperty("java.io.tmpdir")).resolve("key-value-cache2");
 
-    private final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\S+)\\.(ser)$");
+    private final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\d+)\\.(ser)$");
 
     // Hashcode of key to List<Path> on the disk because there can be collisions
     private final Map<Integer, List<Path>> contents;
@@ -156,9 +160,9 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
 
     @SuppressWarnings("unchecked")
     private Map.Entry<K, V> deserialize(Path path) {
-        try (FileInputStream objFileInputStream = new FileInputStream(path.toFile());
-             ObjectInputStream objObjectInputStream = new ObjectInputStream(objFileInputStream)) {
-            Map.Entry deserialized = (Map.Entry) objObjectInputStream.readObject();
+        try (FileInputStream fis = new FileInputStream(path.toFile());
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            Map.Entry deserialized = (Map.Entry) ois.readObject();
             K key = (K) deserialized.getKey();
             V value = (V) deserialized.getValue();
             return new AbstractMap.SimpleImmutableEntry<>(key, value);
@@ -189,8 +193,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     }
 
     private Element<K, V> putVal(K key, V value) {
-        // Todo serialize
-        Path serialized = null;
+        Path serialized = serialize(key, value);
         // update contents
         List<Path> keyPaths = Optional.ofNullable(contents.get(key.hashCode()))
                 .orElseGet(() -> {
@@ -200,6 +203,20 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
                 });
         keyPaths.add(serialized);
         return new Element<>(key, value, serialized, keyPaths.size() - 1);
+    }
+
+    private Path serialize(K key, V value) {
+        Optional<List<Path>> keyPathsOpt = Optional.ofNullable(contents.get(key.hashCode()));
+        String fileName = format(FILENAME_FORMAT, key.hashCode(), keyPathsOpt.map(List::size).orElse(0));
+        Path serialized = folder.resolve(fileName);
+        Map.Entry<K, V> entryToSerialize = new AbstractMap.SimpleImmutableEntry<>(key, value);
+        try(FileOutputStream fos = new FileOutputStream(serialized.toFile());
+            ObjectOutputStream oos = new ObjectOutputStream(fos)){
+            oos.writeObject(entryToSerialize);
+            return serialized;
+        } catch (Exception e) {
+            throw new StorageException(e.getMessage(), e);
+        }
     }
 
 }
