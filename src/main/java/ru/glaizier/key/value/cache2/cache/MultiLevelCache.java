@@ -1,6 +1,7 @@
 package ru.glaizier.key.value.cache2.cache;
 
 import java.io.Serializable;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,10 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
         this.levels = Collections.unmodifiableList(levels);
     }
 
+    /**
+     * Searches key in all levels
+     */
+    // Todo move found to the first level
     @Override
     public Optional<V> get(K key) {
         return levels.stream()
@@ -39,29 +44,27 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
 
     @Override
     public Optional<Map.Entry<K, V>> put(K key, V value) {
-        return null;
+        return levels.get(0).put(key, value).flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
     }
 
+    /**
+     * Evicts consequently from levels by putting evicted elements to other levels
+     * l0 -> ev0 + l1 -> ev1 + l2 -> el2 ...
+     */
     @Override
     public Optional<Map.Entry<K, V>> evict() {
-        Optional<Map.Entry<K, V>> evictedOpt = levels.get(0).evict();
-//        evictedOpt.map(evicted -> {
-//            levels.stream()
-//                .skip(1)
-//                .forEach(level -> {
-//                    level.put(evicted.getKey(), evicted.getValue());
-//                });
-//        })
-//
-//
-//        for (Cache cache: levels) {
-//
-//        }
-//        levels.forEach(level -> {
-//            Optional<Map.Entry<K, V>> evicted = level.evict();
-//
-//        })
-        return null;
+        return levels.get(0).evict().flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
+    }
+
+    /**
+     * Puts the element to the start level and gets the evicted from the last level
+     */
+    private Optional<Map.Entry<K, V>> put(K key, V value, int startLevelIndex) {
+        Optional<Map.Entry<K, V>> curEvicted = Optional.of(new AbstractMap.SimpleImmutableEntry<>(key, value));
+        for (int levelIndex = startLevelIndex; levelIndex < levels.size() && curEvicted.isPresent(); levelIndex++) {
+            curEvicted = levels.get(levelIndex).put(curEvicted.get().getKey(), curEvicted.get().getValue());
+        }
+        return curEvicted;
     }
 
     @Override
