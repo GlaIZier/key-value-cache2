@@ -44,6 +44,9 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
 
     @Override
     public Optional<Map.Entry<K, V>> put(K key, V value) {
+        // Todo remove value first
+//        levels.stream()
+//            .;
         return levels.get(0).put(key, value).flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
     }
 
@@ -65,6 +68,17 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
             curEvicted = levels.get(levelIndex).put(curEvicted.get().getKey(), curEvicted.get().getValue());
         }
         return curEvicted;
+    }
+
+    @Override
+    // Todo implement this
+    public Optional<V> remove(K key) {
+        return null;
+    }
+
+    @Override
+    public boolean contains(K key) {
+        return false;
     }
 
     @Override

@@ -16,10 +16,15 @@ public interface Strategy<K> {
     Optional<K> evict();
 
     /**
-     * Tells the strategy that current key element was recently used.
-     * @param key
+     * Tells the strategy that current key element was recently used. Also, can be used to add new key to statistics
      * @return true if statistics has already existed for this element (the element is not new)
      */
-    boolean updateStatistics(K key);
+    boolean use(K key);
+
+    /**
+     * Removes key from statistics
+     * @return true if such key was removed
+     */
+    boolean remove(K key);
 
 }

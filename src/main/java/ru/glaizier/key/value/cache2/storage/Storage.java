@@ -16,7 +16,7 @@ public interface Storage<K, V> {
     Optional<V> put(K key, V value);
 
     /**
-     * @return previous value or empty if there was no such value. Or return null when no such key.
+     * @return previous value or empty if there was no such value. Or return Optional.empty when no such key.
      * Use contains() to handle this situation
      */
     Optional<V> remove(K key);

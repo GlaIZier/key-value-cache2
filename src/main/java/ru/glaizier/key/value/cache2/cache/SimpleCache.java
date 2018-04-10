@@ -34,7 +34,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         // update statistics only if this key is present in the storage
         return storage.get(key)
             .map(v -> {
-                strategy.updateStatistics(key);
+                strategy.use(key);
                 return v;
             });
     }
@@ -48,7 +48,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
             evicted = evict();
         }
 
-        strategy.updateStatistics(key);
+        strategy.use(key);
         storage.put(key, value);
         return evicted;
     }
@@ -60,6 +60,17 @@ public class SimpleCache<K, V> implements Cache<K, V> {
                 V evictedValue = storage.remove(evictedKey).orElseThrow(IllegalStateException::new);
                 return new AbstractMap.SimpleImmutableEntry<>(evictedKey, evictedValue);
             });
+    }
+
+    @Override
+    public Optional<V> remove(K key) {
+        strategy.remove(key);
+        return storage.remove(key);
+    }
+
+    @Override
+    public boolean contains(K key) {
+        return storage.contains(key);
     }
 
     @Override

@@ -30,10 +30,16 @@ public class MruStrategy<K> implements Strategy<K> {
     }
 
     @Override
-    public boolean updateStatistics(K key) {
+    public boolean use(K key) {
         Objects.requireNonNull(key, "key");
         boolean contained = queue.remove(key);
         queue.addToHead(key);
         return contained;
+    }
+
+    @Override
+    public boolean remove(K key) {
+        Objects.requireNonNull(key, "key");
+        return queue.remove(key);
     }
 }

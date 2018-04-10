@@ -11,9 +11,14 @@ import org.junit.Test;
 /**
  * @author GlaIZier
  */
-public class LruStrategyTest {
+public class LruStrategyTest extends StrategyTest {
 
     private final Strategy<Integer> strategy = new LruStrategy<>();
+
+    @Override
+    protected Strategy<Integer> getStrategy() {
+        return strategy;
+    }
 
     @Test
     public void getEmptyOnEmptyQueue() {
@@ -22,22 +27,22 @@ public class LruStrategyTest {
 
     @Test
     public void getOneAfterOneInsert() {
-        assertFalse(strategy.updateStatistics(1));
+        assertFalse(strategy.use(1));
         assertThat(strategy.evict(), is(Optional.of(1)));
     }
 
     @Test
     public void getOneAfterOneTwoInserts() {
-        assertFalse(strategy.updateStatistics(1));
-        assertFalse(strategy.updateStatistics(2));
+        assertFalse(strategy.use(1));
+        assertFalse(strategy.use(2));
         assertThat(strategy.evict(), is(Optional.of(1)));
     }
 
     @Test
     public void getTwoAfterOneTwoInsertsAndOneUpdate() {
-        assertFalse(strategy.updateStatistics(1));
-        assertFalse(strategy.updateStatistics(2));
-        assertTrue(strategy.updateStatistics(1));
+        assertFalse(strategy.use(1));
+        assertFalse(strategy.use(2));
+        assertTrue(strategy.use(1));
         assertThat(strategy.evict(), is(Optional.of(2)));
     }
 

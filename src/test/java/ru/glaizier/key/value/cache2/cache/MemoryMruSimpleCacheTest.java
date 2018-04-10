@@ -13,14 +13,17 @@ import ru.glaizier.key.value.cache2.cache.strategy.MruStrategy;
 import ru.glaizier.key.value.cache2.storage.MemoryStorage;
 
 /**
+ * Here it could be right to use mocks to unit test Cache itself,
+ * but I don't want additional Maven dependency in this small project. So, this is a kind of integration test.
  * @author GlaIZier
  */
+
 public class MemoryMruSimpleCacheTest extends SimpleCacheTest{
 
     private final Cache<Integer, String> cache = new SimpleCache<>(MemoryStorage.ofHashMap(), new MruStrategy<>(), 2);
 
     @Override
-    public Cache<Integer, String> getCache() {
+    protected Cache<Integer, String> getCache() {
         return cache;
     }
 

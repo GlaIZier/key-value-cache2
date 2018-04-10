@@ -19,7 +19,7 @@ public class MemoryLruSimpleCacheTest extends SimpleCacheTest {
     private final Cache<Integer, String> cache = new SimpleCache<>(MemoryStorage.ofHashMap(), new LruStrategy<>(), 2);
 
     @Override
-    public Cache<Integer, String> getCache() {
+    protected Cache<Integer, String> getCache() {
         return cache;
     }
 
