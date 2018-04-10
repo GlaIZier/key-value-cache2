@@ -10,7 +10,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Multi level cache implementation which evicts elements from first (top) levels to below ones
+ * Multi level cache implementation which evicts elements from first (top) levels to below ones.
+ * Equal keys can't be present in different levels
  * @author mkhokhlushin
  */
 public class MultiLevelCache<K extends Serializable, V extends Serializable> implements Cache<K, V> {
@@ -35,6 +36,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
     // Todo move found to the first level
     @Override
     public Optional<V> get(K key) {
+        Objects.requireNonNull(key, "key");
         return levels.stream()
             .map(cache -> cache.get(key))
             .filter(Optional::isPresent)
@@ -42,12 +44,17 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
             .findFirst();
     }
 
+    /**
+     * Puts to the first level and evicts consequently
+     */
     @Override
+    // Todo start here
+    // Todo check work with recursion
     public Optional<Map.Entry<K, V>> put(K key, V value) {
-        // Todo remove value first
-//        levels.stream()
-//            .;
-        return levels.get(0).put(key, value).flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
+        Objects.requireNonNull(key, "key");
+        // Removes the key if it already in the cache
+        remove(key);
+        return put(key, value, 0);
     }
 
     /**
@@ -55,6 +62,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * l0 -> ev0 + l1 -> ev1 + l2 -> el2 ...
      */
     @Override
+    // Todo start here
     public Optional<Map.Entry<K, V>> evict() {
         return levels.get(0).evict().flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
     }
@@ -70,15 +78,30 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
         return curEvicted;
     }
 
+
+    private Optional<Map.Entry<K, V>> putRec(K key, V value, int curLevelIndex) {
+        if (curLevelIndex == levels.size())
+            return Optional.of(new AbstractMap.SimpleImmutableEntry<>(key, value));
+        Optional<Map.Entry<K, V>> curEvictedOpt = levels.get(curLevelIndex).put(key, value);
+        return curEvictedOpt.flatMap(curEvicted -> putRec(curEvicted.getKey(), curEvicted.getValue(), curLevelIndex + 1));
+    }
+
+    /**
+     * Removes the element from the first found level.
+     */
     @Override
-    // Todo implement this
     public Optional<V> remove(K key) {
-        return null;
+        Objects.requireNonNull(key, "key");
+        return levels.stream()
+            .filter(level -> level.contains(key))
+            .findFirst()
+            .flatMap(level -> level.remove(key));
     }
 
     @Override
     public boolean contains(K key) {
-        return false;
+        Objects.requireNonNull(key, "key");
+        return levels.stream().anyMatch(level -> level.contains(key));
     }
 
     @Override

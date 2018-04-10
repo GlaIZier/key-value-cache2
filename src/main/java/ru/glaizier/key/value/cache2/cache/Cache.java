@@ -10,6 +10,9 @@ import java.util.Optional;
 // Todo add general interface for Storage and Cache
 public interface Cache<K, V>  {
 
+    /**
+     * Can return empty element in case null was added as a value. To deal with such situations use contains method
+     */
     Optional<V> get(K key);
 
     /**
