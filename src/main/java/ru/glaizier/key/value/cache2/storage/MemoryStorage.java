@@ -11,12 +11,13 @@ public class MemoryStorage<K, V> implements Storage<K, V> {
 
     private final Map<K, V> map;
 
-    public MemoryStorage(Map<K, V> map) {
-        this.map = map;
-    }
-
     public static <K, V> MemoryStorage<K, V> ofHashMap() {
         return new MemoryStorage<>(new HashMap<>());
+    }
+
+    public MemoryStorage(Map<K, V> map) {
+        Objects.requireNonNull(map, "map");
+        this.map = map;
     }
 
     @Override

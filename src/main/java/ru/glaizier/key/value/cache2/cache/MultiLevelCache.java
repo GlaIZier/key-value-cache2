@@ -1,5 +1,6 @@
 package ru.glaizier.key.value.cache2.cache;
 
+import static java.lang.String.format;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -31,24 +32,31 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
     }
 
     /**
-     * Searches key in all levels
+     * Searches key in all levels and puts found to the first level
      */
-    // Todo move found to the first level
     @Override
     public Optional<V> get(K key) {
         Objects.requireNonNull(key, "key");
-        return levels.stream()
+        Optional<V> foundOpt = levels.stream()
             .map(cache -> cache.get(key))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .findFirst();
+        // move element to the first level
+        return foundOpt.map(foundValue -> {
+            remove(key);
+            put(key, foundValue).ifPresent(evicted -> {
+                throw new IllegalStateException(format("Element %s-%s has been evicted during get method!",
+                    evicted.getKey(), evicted.getValue()));
+            });
+            return foundValue;
+        });
     }
 
     /**
      * Puts to the first level and evicts consequently
      */
     @Override
-    // Todo start here
     // Todo check work with recursion
     public Optional<Map.Entry<K, V>> put(K key, V value) {
         Objects.requireNonNull(key, "key");
@@ -62,7 +70,6 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * l0 -> ev0 + l1 -> ev1 + l2 -> el2 ...
      */
     @Override
-    // Todo start here
     public Optional<Map.Entry<K, V>> evict() {
         return levels.get(0).evict().flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
     }

@@ -211,7 +211,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
         Path serialized = folder.resolve(fileName);
         Map.Entry<K, V> entryToSerialize = new AbstractMap.SimpleImmutableEntry<>(key, value);
         try(FileOutputStream fos = new FileOutputStream(serialized.toFile());
-            ObjectOutputStream oos = new ObjectOutputStream(fos)){
+            ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(entryToSerialize);
             return serialized;
         } catch (Exception e) {
