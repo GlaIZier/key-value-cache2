@@ -19,6 +19,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
 
     private final List<Cache<K, V>> levels;
 
+    @SafeVarargs
     public MultiLevelCache(Cache<K, V>... levels) {
         this(Arrays.asList(levels));
     }
