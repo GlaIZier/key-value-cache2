@@ -31,4 +31,22 @@ public class MultiLevelCacheTest {
         assertThat(c.getCapacity(), is(4));
     }
 
+
+    @Test
+    public void size() {
+        assertThat(c.getSize(), is(0));
+        c.put(1, "1");
+        assertThat(c.getSize(), is(1));
+        c.put(2, "2");
+        assertThat(c.getSize(), is(2));
+        c.put(2, "3");
+        assertThat(c.getSize(), is(2));
+        c.put(3, "3");
+        assertThat(c.getSize(), is(3));
+        c.put(4, "4");
+        assertThat(c.getSize(), is(4));
+        c.put(5, "5");
+        assertThat(c.getSize(), is(4));
+    }
+
 }
