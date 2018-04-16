@@ -1,5 +1,8 @@
 package ru.glaizier.key.value.cache2.cache;
 
+import java.util.AbstractMap;
+import java.util.Optional;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -9,7 +12,9 @@ import ru.glaizier.key.value.cache2.storage.FileStorage;
 import ru.glaizier.key.value.cache2.storage.MemoryStorage;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class MultiLevelCacheTest {
 
@@ -27,7 +32,72 @@ public class MultiLevelCacheTest {
     }
 
     @Test
+    public void put() {
+        assertFalse(c.contains(1));
+        assertThat(c.get(1), is(Optional.empty()));
+        assertFalse(c.contains(2));
+        assertThat(c.get(2), is(Optional.empty()));
+        assertFalse(c.contains(3));
+        assertThat(c.get(3), is(Optional.empty()));
+        assertFalse(c.contains(4));
+        assertThat(c.get(4), is(Optional.empty()));
+
+        assertThat(c.put(1, "1"), is(Optional.empty()));
+
+        assertTrue(c.contains(1));
+        assertThat(c.get(1), is(Optional.of("1")));
+
+        assertThat(c.put(2, "2"), is(Optional.empty()));
+
+        assertTrue(c.contains(2));
+        assertThat(c.get(2), is(Optional.of("2")));
+
+        assertThat(c.put(3, "3"), is(Optional.empty()));
+
+        assertTrue(c.contains(3));
+        assertThat(c.get(3), is(Optional.of("3")));
+
+        assertThat(c.put(4, "4"), is(Optional.empty()));
+
+        assertTrue(c.contains(4));
+        assertThat(c.get(4), is(Optional.of("4")));
+
+        assertThat(c.put(5, "5"), is(Optional.of(new AbstractMap.SimpleImmutableEntry<>(1, "1"))));
+
+        assertTrue(c.contains(5));
+        assertThat(c.get(5), is(Optional.of("5")));
+        assertFalse(c.contains(1));
+        assertThat(c.get(1), is(Optional.empty()));
+
+        assertThat(c.put(2, "22"), is(Optional.empty()));
+        assertTrue(c.contains(2));
+        assertThat(c.get(2), is(Optional.of("22")));
+    }
+
+    @Test
+    public void contains() {
+        assertFalse(c.contains(1));
+        assertFalse(c.contains(2));
+        assertFalse(c.contains(3));
+        assertFalse(c.contains(4));
+        c.put(1, "1");
+        assertTrue(c.contains(1));
+        c.put(2, "2");
+        assertTrue(c.contains(2));
+        c.put(3, "3");
+        assertTrue(c.contains(3));
+        c.put(4, "4");
+        assertTrue(c.contains(4));
+        c.put(5, "5");
+        assertTrue(c.contains(5));
+        assertFalse(c.contains(1));
+    }
+
+
+    @Test
     public void capacity() {
+        assertThat(c.getCapacity(), is(4));
+        c.put(1, "1");
         assertThat(c.getCapacity(), is(4));
     }
 
