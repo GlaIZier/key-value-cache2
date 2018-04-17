@@ -85,7 +85,9 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
         return curEvicted;
     }
 
-
+    /**
+     * Puts recursively the element to the start level and gets the evicted from the last level
+     */
     private Optional<Map.Entry<K, V>> putRec(K key, V value, int curLevelIndex) {
         if (curLevelIndex == levels.size())
             return Optional.of(new AbstractMap.SimpleImmutableEntry<>(key, value));
