@@ -6,7 +6,6 @@ import java.util.Optional;
  * Interface for cache strategy
  * @author GlaIZier
  */
-// Todo think about the possibility to make it FunctionalInterface
 public interface Strategy<K> {
 
     /**

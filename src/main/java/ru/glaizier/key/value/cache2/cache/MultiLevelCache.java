@@ -58,12 +58,11 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * Puts to the first level and evicts consequently
      */
     @Override
-    // Todo check work with recursion
     public Optional<Map.Entry<K, V>> put(K key, V value) {
         Objects.requireNonNull(key, "key");
         // Removes the key if it already in the cache
         remove(key);
-        return put(key, value, 0);
+        return putRec(key, value, 0);
     }
 
     /**
@@ -72,7 +71,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      */
     @Override
     public Optional<Map.Entry<K, V>> evict() {
-        return levels.get(0).evict().flatMap(firstEvicted -> put(firstEvicted.getKey(), firstEvicted.getValue(), 1));
+        return levels.get(0).evict().flatMap(firstEvicted -> putRec(firstEvicted.getKey(), firstEvicted.getValue(), 1));
     }
 
     /**
