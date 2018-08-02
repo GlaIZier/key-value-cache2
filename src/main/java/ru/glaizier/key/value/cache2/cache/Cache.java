@@ -8,7 +8,6 @@ import ru.glaizier.key.value.cache2.storage.ImmutableMap;
 /**
  * @author GlaIZier
  */
-// Todo add logger
 public interface Cache<K, V> extends ImmutableMap<K, V> {
 
     /**
