@@ -14,6 +14,7 @@
 
     <build>
         <plugins>
+            <!-- Actually, is not used here-->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
