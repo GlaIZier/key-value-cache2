@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * @author GlaIZier
  */
-public interface ImmutableMap<K, V> {
+public interface RestrictedMap<K, V> {
 
     Optional<V> get(K key);
 

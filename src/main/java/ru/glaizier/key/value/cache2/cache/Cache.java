@@ -3,12 +3,12 @@ package ru.glaizier.key.value.cache2.cache;
 import java.util.Map;
 import java.util.Optional;
 
-import ru.glaizier.key.value.cache2.storage.ImmutableMap;
+import ru.glaizier.key.value.cache2.storage.RestrictedMap;
 
 /**
  * @author GlaIZier
  */
-public interface Cache<K, V> extends ImmutableMap<K, V> {
+public interface Cache<K, V> extends RestrictedMap<K, V> {
 
     /**
      * Put the element to the cache and get evicted element if exists

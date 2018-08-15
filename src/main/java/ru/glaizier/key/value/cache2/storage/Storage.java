@@ -6,7 +6,7 @@ import java.util.Optional;
  * Interface for key-value storage
  * @author GlaIZier
  */
-public interface Storage<K, V> extends ImmutableMap<K, V> {
+public interface Storage<K, V> extends RestrictedMap<K, V> {
 
     /**
      * @return previous value or empty if there was no such value
