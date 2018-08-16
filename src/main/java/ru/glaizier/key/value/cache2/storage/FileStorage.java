@@ -10,11 +10,18 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import javax.annotation.Nonnull;
 
 import static ru.glaizier.key.value.cache2.util.function.Functions.wrap;
 
@@ -83,7 +90,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
         }
     }
 
-    public static Map<Integer, List<Path>> createContents(Path folder) throws IOException {
+    static Map<Integer, List<Path>> createContents(Path folder) throws IOException {
         return Files.walk(folder)
                 .filter(Files::isRegularFile)
                 .filter(path -> Objects.nonNull(path.getFileName()))
@@ -102,14 +109,15 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     }
 
     @Override
-    public Optional<V> get(K key) {
+    public Optional<V> get(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return findElement(key).map(Element::getValue);
     }
 
     @Override
-    public Optional<V> put(K key, V value) {
+    public Optional<V> put(@Nonnull K key, @Nonnull V value) {
         Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         Optional<V> prevValue = remove(key);
 
         putVal(key, value);
@@ -117,7 +125,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     }
 
     @Override
-    public Optional<V> remove(K key) {
+    public Optional<V> remove(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return findElement(key)
                 .flatMap(this::remove)
@@ -125,7 +133,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     }
 
     @Override
-    public boolean contains(K key) {
+    public boolean contains(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return findElement(key).isPresent();
     }
@@ -192,6 +200,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
         return removedElement;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private Element<K, V> putVal(K key, V value) {
         Path serialized = serialize(key, value);
         // update contents

@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,6 @@ public class LruStrategy<K> implements Strategy<K> {
 
     @Override
     public Optional<K> evict() {
-        log.debug("Entering evict()...");
         // Find first element for eviction and remove it if it was found
         return queue.stream()
             .findFirst()
@@ -37,7 +38,7 @@ public class LruStrategy<K> implements Strategy<K> {
     }
 
     @Override
-    public boolean use(K key) {
+    public boolean use(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         boolean contained = queue.remove(key);
         queue.add(key);
@@ -45,7 +46,7 @@ public class LruStrategy<K> implements Strategy<K> {
     }
 
     @Override
-    public boolean remove(K key) {
+    public boolean remove(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return queue.remove(key);
     }

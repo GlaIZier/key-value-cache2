@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 
 public class MemoryStorage<K, V> implements Storage<K, V> {
 
@@ -21,23 +23,24 @@ public class MemoryStorage<K, V> implements Storage<K, V> {
     }
 
     @Override
-    public Optional<V> get(K key) {
+    public Optional<V> get(@Nonnull K key) {
         return ofNullable(map.get(key));
     }
 
     @Override
-    public Optional<V> put(K key, V value) {
+    public Optional<V> put(@Nonnull K key, @Nonnull V value) {
         Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         return ofNullable(map.put(key, value));
     }
 
     @Override
-    public Optional<V> remove(K key) {
+    public Optional<V> remove(@Nonnull K key) {
         return ofNullable(map.remove(key));
     }
 
     @Override
-    public boolean contains(K key) {
+    public boolean contains(@Nonnull K key) {
         return map.containsKey(key);
     }
 

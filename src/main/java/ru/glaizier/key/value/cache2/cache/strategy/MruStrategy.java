@@ -1,8 +1,9 @@
 package ru.glaizier.key.value.cache2.cache.strategy;
 
-import static java.util.Optional.ofNullable;
 import java.util.Objects;
 import java.util.Optional;
+
+import javax.annotation.Nonnull;
 
 import ru.glaizier.key.value.cache2.util.LinkedHashSet;
 
@@ -30,7 +31,7 @@ public class MruStrategy<K> implements Strategy<K> {
     }
 
     @Override
-    public boolean use(K key) {
+    public boolean use(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         boolean contained = queue.remove(key);
         queue.addToHead(key);
@@ -38,7 +39,7 @@ public class MruStrategy<K> implements Strategy<K> {
     }
 
     @Override
-    public boolean remove(K key) {
+    public boolean remove(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return queue.remove(key);
     }

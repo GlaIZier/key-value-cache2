@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 import ru.glaizier.key.value.cache2.cache.strategy.Strategy;
 import ru.glaizier.key.value.cache2.storage.Storage;
 
@@ -30,7 +32,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Optional<V> get(K key) {
+    public Optional<V> get(@Nonnull K key) {
         // update statistics only if this key is present in the storage
         return storage.get(key)
             .map(v -> {
@@ -40,8 +42,9 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Optional<Map.Entry<K, V>> put(K key, V value) {
+    public Optional<Map.Entry<K, V>> put(@Nonnull K key, @Nonnull V value) {
         Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
 
         Optional<Map.Entry<K, V>> evicted = Optional.empty();
         if (isFull()) {
@@ -63,13 +66,13 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Optional<V> remove(K key) {
+    public Optional<V> remove(@Nonnull K key) {
         strategy.remove(key);
         return storage.remove(key);
     }
 
     @Override
-    public boolean contains(K key) {
+    public boolean contains(@Nonnull K key) {
         return storage.contains(key);
     }
 

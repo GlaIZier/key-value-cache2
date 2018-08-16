@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 /**
  * Multi level cache implementation which evicts elements from first (top) levels to below ones.
  * Equal keys can't be present in different levels
@@ -36,7 +38,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * Searches key in all levels and puts found to the first level
      */
     @Override
-    public Optional<V> get(K key) {
+    public Optional<V> get(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         Optional<V> foundOpt = levels.stream()
             .map(cache -> cache.get(key))
@@ -58,8 +60,9 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * Puts to the first level and evicts consequently
      */
     @Override
-    public Optional<Map.Entry<K, V>> put(K key, V value) {
+    public Optional<Map.Entry<K, V>> put(@Nonnull K key, @Nonnull V value) {
         Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(value, "value");
         // Removes the key if it already in the cache
         remove(key);
         return putRec(key, value, 0);
@@ -99,7 +102,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
      * Removes the element from the first found level.
      */
     @Override
-    public Optional<V> remove(K key) {
+    public Optional<V> remove(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return levels.stream()
             .filter(level -> level.contains(key))
@@ -108,7 +111,7 @@ public class MultiLevelCache<K extends Serializable, V extends Serializable> imp
     }
 
     @Override
-    public boolean contains(K key) {
+    public boolean contains(@Nonnull K key) {
         Objects.requireNonNull(key, "key");
         return levels.stream().anyMatch(level -> level.contains(key));
     }

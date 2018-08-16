@@ -2,6 +2,8 @@ package ru.glaizier.key.value.cache2.storage;
 
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 /**
  * Interface for key-value storage
  * @author GlaIZier
@@ -9,8 +11,8 @@ import java.util.Optional;
 public interface Storage<K, V> extends RestrictedMap<K, V> {
 
     /**
-     * @return previous value or empty if there was no such value
+     * @return previous value or empty if there was no such key before
      */
-    Optional<V> put(K key, V value);
+    Optional<V> put(@Nonnull K key, @Nonnull V value);
 
 }
