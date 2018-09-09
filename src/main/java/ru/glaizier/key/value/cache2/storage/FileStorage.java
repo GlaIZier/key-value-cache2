@@ -36,7 +36,7 @@ public class FileStorage<K extends Serializable, V extends Serializable> impleme
     private final static Pattern FILENAME_PATTERN = Pattern.compile("^(\\d+)-(\\d+)\\.(ser)$");
 
     // Hashcode of key to List<Path> on the disk because there can be collisions
-    // I could just have used just Ket to Path and let Java implementation of HashMap deal with collisions.
+    // I could've just used K to Path and let Java implementation of HashMap deal with collisions.
     // But I wanted to practice in collision dealing myself
     private final Map<Integer, List<Path>> contents;
 
