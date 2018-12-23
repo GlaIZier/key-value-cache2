@@ -47,7 +47,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         Objects.requireNonNull(value);
 
         Optional<Map.Entry<K, V>> evicted = Optional.empty();
-        if (isFull()) {
+        if (isFull() && !contains(key)) {
             evicted = evict();
         }
 
