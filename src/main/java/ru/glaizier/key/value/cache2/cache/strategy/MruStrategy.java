@@ -18,6 +18,7 @@ public class MruStrategy<K> implements Strategy<K> {
      * We need to be able to get by key, replace elements and get first in queue in O(1).
      * This can't be achieved by Java SE. So, I use my own implementation
      */
+    // Todo add some library for this purpose
     private final LinkedHashSet<K> queue = new LinkedHashSet<>();
 
     @Override
